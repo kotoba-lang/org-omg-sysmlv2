@@ -228,6 +228,23 @@
                         :sysml/raw-tokens raw})]
     (add-owned! model owner element)))
 
+(defn- parse-perform! [tokens index model owner]
+  (let [raw (capture-opaque-tokens! tokens index)
+        statement (vec (butlast raw))
+        body-index (first (keep-indexed #(when (= "{" %2) %1) statement))
+        redefine-index (first (keep-indexed #(when (= "redefines" %2) %1) statement))
+        target-end (or redefine-index body-index (count statement))
+        target-tokens (cond-> (subvec statement 1 target-end)
+                        (= "action" (second statement)) (subvec 1))
+        target (apply str target-tokens)
+        declared-name (last (str/split target #"::|\."))
+        redefines (when redefine-index (get statement (inc redefine-index)))
+        element (cond-> (sm/action-usage declared-name nil)
+                  (seq target) (assoc :sysml/performs target)
+                  redefines (assoc :sysml/redefines redefines)
+                  true (assoc :sysml/raw-tokens raw))]
+    (add-owned! model owner element)))
+
 (defn- parse-package! [tokens index model owner]
   (expect! tokens index "package")
   (let [nm (parse-name! tokens index)
@@ -302,6 +319,7 @@
         (nil? token) (when owner (parser-error tokens index "unterminated element body"))
         (= "}" token) (take-token! tokens index)
         (= "package" token) (do (parse-package! tokens index model owner) (recur))
+        (= "perform" token) (do (parse-perform! tokens index model owner) (recur))
         (or (= "import" token)
             (and (contains? #{"public" "private" "protected"} token)
                  (= "import" (get tokens (inc @index)))))
@@ -379,7 +397,7 @@
                     nested (or (seq (get-in model [:sysml/source-order nm]))
                                (sort (:sysml/nested element #{})))]
                 (cond
-                  (= :opaque-syntax kind)
+                  (seq (:sysml/raw-tokens element))
                   (str (indent level) (tokens->text (:sysml/raw-tokens element)) "\n")
 
                   (= :package kind)

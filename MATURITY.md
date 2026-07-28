@@ -6,7 +6,7 @@
 |---|---|---|
 | Official example acceptance | OMG `ptc/25-04-31.sysml` | 100% |
 | Official example token-AST round-trip | parse → emit → parse equality | 100% |
-| Official example semantic element modeling | Elements not represented as `:opaque-syntax` | 377 / 623 (60.5%) |
+| Official example semantic element modeling | Elements not represented as `:opaque-syntax` | 420 / 623 (67.4%) |
 | Full normative grammar semantic coverage | SysML.xtext + inherited KerML expression grammar | Not yet 100% |
 | Behavior execution | Normative behavioral semantics | Not implemented |
 | Constraint/requirement reasoning | Normative semantic rules | Not implemented |

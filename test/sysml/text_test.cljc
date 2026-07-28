@@ -120,7 +120,11 @@
         opaque (filter #(= :opaque-syntax (:sysml/element-kind %))
                        (sm/elements model))]
     (is (= ["=" "500"] (:sysml/raw-tail (sm/lookup model "electricalPower"))))
-    (is (= 3 (count opaque)))
+    (is (= 2 (count opaque)))
+    (is (= :action-usage
+           (:sysml/element-kind (sm/lookup model "providePower"))))
+    (is (= "providePower"
+           (:sysml/performs (sm/lookup model "providePower"))))
     (is (= model (text/parse-string emitted "behavior-preservation")))))
 
 (deftest dotted-connection-references
