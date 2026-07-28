@@ -15,7 +15,7 @@
   `Classifier` specialization, ecore ~L921: `Definition eSuperTypes=
   Classifier`), a `Usage` is an occurrence of one in a context (KerML
   `Feature` specialization, ecore ~L4827: `Usage eSuperTypes=Feature`).
-  `Usage.definition` names the Classifiers/Definitions typing a usage
+  Optional `Usage.definition` names the Classifiers/Definitions typing a usage
   (ecore ~L4837-4847); `Definition.usage`/`Usage.nestedUsage` name a
   Definition's or Usage's owned Usages (ecore ~L925 / ~L4827 doc). A
   `PartUsage` can itself own nested `PartUsage`s typed by other
@@ -25,8 +25,8 @@
   `sysml.validate` and README Contract example for exactly this shape.
 
   Element shape: every element is `{:kerml/kind :classifier|:feature
-  :kerml/name _ :sysml/element-kind _ ...}`. A Usage additionally carries
-  `:sysml/definition` (the name of the Classifier/Definition typing it) and,
+  :kerml/name _ :sysml/element-kind _ ...}`. A typed Usage additionally
+  carries `:sysml/definition` (the name of its Classifier/Definition) and,
   optionally, `:sysml/nested` (a set of names of Usages -- or, for a
   `:package`, arbitrary member elements -- it structurally contains).
 
@@ -113,7 +113,10 @@
   (merge (kerml/classifier nm) {:sysml/element-kind kind} opts))
 
 (defn- usage [kind nm definition-name opts]
-  (merge (kerml/feature nm) {:sysml/element-kind kind :sysml/definition definition-name} opts))
+  (merge (kerml/feature nm)
+         (cond-> {:sysml/element-kind kind}
+           definition-name (assoc :sysml/definition definition-name))
+         opts))
 
 (defn part-definition
   "A `PartDefinition` (SysML 2.0, ecore ~L3296: `PartDefinition
@@ -123,8 +126,8 @@
   ([nm opts] (definition :part-definition nm opts)))
 
 (defn part-usage
-  "A `PartUsage` (ecore ~L3301) typed by the Definition named
-  `definition-name`."
+  "A `PartUsage` (ecore ~L3301), optionally typed by the Definition named
+  `definition-name`. SysML v2 permits untyped Usages."
   ([nm definition-name] (part-usage nm definition-name nil))
   ([nm definition-name opts] (usage :part-usage nm definition-name opts)))
 

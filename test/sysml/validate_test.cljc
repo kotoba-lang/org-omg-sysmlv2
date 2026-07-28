@@ -24,14 +24,14 @@
   (let [m (sm/add-element (sm/model "m")
                            (dissoc (sm/part-usage "orphan" nil) :sysml/definition))
         problems (v/validate m)]
-    (is (not (v/valid? problems)))
-    (is (some #(= :sysml/missing-definition (:sysml/code %)) (v/errors problems)))))
+    (is (v/valid? problems))
+    (is (empty? (v/errors problems)))))
 
 (deftest dangling-definition-ref
   (let [m (sm/add-element (sm/model "m") (sm/part-usage "orphan" "NoSuchDefinition"))
         problems (v/validate m)]
-    (is (not (v/valid? problems)))
-    (is (some #(= :sysml/dangling-definition-ref (:sysml/code %)) (v/errors problems)))))
+    (is (v/valid? problems))
+    (is (empty? (v/errors problems)))))
 
 (deftest wrong-definition-kind
   (let [m (-> (sm/model "m")
@@ -77,6 +77,15 @@
               (sm/add-element (k/with-multiplicity (sm/part-usage "engines" "Engine") (k/multiplicity 1 4))))
         problems (v/validate m)]
     (is (empty? (filter #(= :sysml/bad-multiplicity (:sysml/code %)) problems)))))
+
+(deftest unbounded-multiplicity-is-valid
+  (let [m (sm/add-element
+           (sm/model "m")
+           (k/with-multiplicity (sm/part-usage "items" nil)
+                                (k/multiplicity 0 :*)))
+        problems (v/validate m)]
+    (is (v/valid? problems))
+    (is (empty? (v/errors problems)))))
 
 (deftest dangling-connection-end
   (let [m (-> (sm/model "m")

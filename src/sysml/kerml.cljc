@@ -88,7 +88,8 @@
 (defn multiplicity
   "Build a `:kerml/multiplicity` bounds map. `lower`/`upper` are plain
   integers (a v1 simplification of KerML's `Multiplicity`, which is really
-  a Feature whose bounds are `Expression` trees -- see namespace docstring)."
+  a Feature whose bounds are `Expression` trees -- see namespace docstring).
+  `upper` may be `:*` for the normative unbounded `*` upper bound."
   [lower upper]
   {:kerml/lower lower :kerml/upper upper})
 
