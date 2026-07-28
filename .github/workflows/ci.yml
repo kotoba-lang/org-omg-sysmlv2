@@ -39,3 +39,6 @@ jobs:
             ${{ runner.os }}-jdk${{ matrix.java }}-clj-
       - name: Run tests
         run: clojure -M:test
+      - name: Check official SysML example conformance
+        if: matrix.java == '21'
+        run: clojure -M:conformance

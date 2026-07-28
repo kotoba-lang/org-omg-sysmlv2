@@ -2,14 +2,15 @@
   "Structural validation for `sysml.model` models, returning
   `kotoba.dsl.problem`-shaped problems (`:sysml/severity :error|:warn`).
 
-  `:error` means the model is not structurally valid SysML v2 (a Usage
-  whose `:sysml/definition` is dangling or the wrong Definition kind, a
+  `:error` means the model is not structurally valid SysML v2 (a locally
+  resolved Usage definition of the wrong kind, a
   Specialization cycle, out-of-range Multiplicity bounds, a Connection/
   Interface Usage whose ends don't resolve to a Port/Part in scope).
   `:warn` means the model IS structurally valid, but exercises a feature
   this library deliberately does not implement in v1 (Action structural-
   only modeling with no execution semantics, satisfy/verify relationships
-  with no requirements-traceability reasoning) -- see README Follow-ups.
+  with no requirements-traceability reasoning, or concrete syntax retained
+  opaquely without semantic interpretation) -- see README Follow-ups.
   This mirrors `xmile.validate`'s error/warn split exactly (same
   `kotoba.dsl.problem` convention, same DFS white/gray/black cycle
   detection technique for illegal Specialization cycles as that
@@ -35,10 +36,9 @@
    :requirement-usage :requirement-definition})
 
 (defn definition-ref-problems
-  "Every Usage's `:sysml/definition` must resolve to a known element of the
-  matching Definition kind -- e.g. a `PartUsage`'s type must resolve to a
-  known `PartDefinition` (same for Attribute/Port/Item/Action/Connection/
-  Interface/Requirement Usages against their respective Definitions)."
+  "When a Usage's optional `:sysml/definition` resolves locally, it must be
+  the matching Definition kind. Untyped Usages and names resolved through
+  imports/external libraries are valid SysML and are not rejected here."
   [m]
   (keep
    (fn [el]
@@ -46,15 +46,8 @@
        (let [nm (:kerml/name el)
              dn (:sysml/definition el)
              def-el (and dn (sm/lookup m dn))]
-         (cond
-           (nil? dn)
-           (err :sysml/missing-definition nm (str nm " has no :sysml/definition"))
-
-           (nil? def-el)
-           (err :sysml/dangling-definition-ref [nm dn]
-                (str nm "'s :sysml/definition references unknown element " dn))
-
-           (not= expected-kind (:sysml/element-kind def-el))
+         (when (and dn def-el
+                    (not= expected-kind (:sysml/element-kind def-el)))
            (err :sysml/wrong-definition-kind [nm dn]
                 (str nm "'s definition " dn " is a " (name (:sysml/element-kind def-el))
                      ", expected a " (name expected-kind)))))))
@@ -100,10 +93,10 @@
            (neg? lower)
            (err :sysml/bad-multiplicity nm (str nm "'s multiplicity lower bound must be >= 0, got " lower))
 
-           (neg? upper)
+           (and (number? upper) (neg? upper))
            (err :sysml/bad-multiplicity nm (str nm "'s multiplicity upper bound must be >= 0, got " upper))
 
-           (> lower upper)
+           (and (number? upper) (> lower upper))
            (err :sysml/bad-multiplicity nm
                 (str nm "'s multiplicity lower bound (" lower ") must be <= upper bound (" upper ")"))))))
    (sm/elements m)))
@@ -121,11 +114,15 @@
           (fn [end-name]
             (let [end-el (sm/lookup m end-name)]
               (cond
-                (nil? end-el)
+                (and (nil? end-el)
+                     (not (or (str/includes? end-name ".")
+                              (str/includes? end-name "::"))))
                 (err :sysml/dangling-connection-end [nm end-name]
                      (str nm "'s end " end-name " does not resolve to any element in scope"))
 
-                (not (contains? #{:port-usage :part-usage} (:sysml/element-kind end-el)))
+                (and end-el
+                     (not (contains? #{:port-usage :part-usage}
+                                     (:sysml/element-kind end-el))))
                 (err :sysml/dangling-connection-end [nm end-name]
                      (str nm "'s end " end-name " must be a PortUsage or PartUsage, got "
                           (name (:sysml/element-kind end-el)))))))
@@ -137,7 +134,7 @@
   "Elements that are structurally valid but exercise a v1 scope-out:
   Action Definitions/Usages (structural only, no execution semantics) and
   satisfy/verify relationship elements (structural traceability only, no
-  requirements-reasoning engine)."
+  requirements-reasoning engine), plus opaque concrete-syntax elements."
   [m]
   (keep
    (fn [el]
@@ -151,6 +148,11 @@
        (warn :sysml/no-requirements-reasoning (:kerml/name el)
              (str (:kerml/name el) " models a satisfy/verify relationship structurally only -- "
                   "no requirements-traceability reasoning is performed (v1 scope-out, see README)"))
+
+       :opaque-syntax
+       (warn :sysml/uninterpreted-syntax (:kerml/name el)
+             (str (:kerml/name el) " preserves concrete syntax that is not yet "
+                  "semantically interpreted by sysml.model"))
 
        nil))
    (sm/elements m)))
