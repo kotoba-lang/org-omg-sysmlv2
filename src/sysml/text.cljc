@@ -19,7 +19,7 @@
   transition/expression/metadata constructs can round-trip without being
   silently discarded. This is not a claim to semantically interpret the
   complete OMG grammar."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [sysml.kerml :as kerml]
             [sysml.model :as sm]))
 

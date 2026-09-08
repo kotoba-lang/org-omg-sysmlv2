@@ -15,7 +15,7 @@
   `kotoba.dsl.problem` convention, same DFS white/gray/black cycle
   detection technique for illegal Specialization cycles as that
   namespace's `algebraic-loop-problems` uses for illegal equation cycles)."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.dsl.problem :as problem]
             [sysml.kerml :as kerml]
             [sysml.model :as sm]))
