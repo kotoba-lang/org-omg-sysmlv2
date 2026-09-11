@@ -149,8 +149,8 @@ The corresponding textual boundary:
 ## Test
 
 ```bash
-clojure -M:test
-clojure -M:conformance  # official OMG Simple Vehicle Model
+kbb -M:test
+kbb -M:conformance  # official OMG Simple Vehicle Model
 ```
 
 See [`MATURITY.md`](MATURITY.md) for denominator-based percentages. The

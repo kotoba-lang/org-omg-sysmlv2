@@ -14,7 +14,7 @@
 Run the externally grounded gate:
 
 ```bash
-clojure -M:conformance
+kbb -M:conformance
 ```
 
 The command downloads OMG's published informative Simple Vehicle Model,
